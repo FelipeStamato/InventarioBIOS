@@ -1,9 +1,10 @@
 ﻿using InventarioBIOS.Servicos;
+using InventarioBIOS;
 
 class Program
 {
     static void Main()
     {
-        Servico.Bios();
+        Bios bios = BiosAppServico.PegaBios();
     }
 }

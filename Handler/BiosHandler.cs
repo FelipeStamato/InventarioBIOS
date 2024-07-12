@@ -4,40 +4,64 @@ using System.Management;
 
 namespace InventarioBIOS.Handler
 {
+
     public class BiosHandler
     {
-        public string Nome { get; set; }
-        public string Descricao { get; set; }
-        public string Versao { get; set; }
-        public string Build { get; set; }
-        public string Fabricante { get; set; }
-        public string Serial { get; set; }
-        public string VersaoSmbios { get; set; }
-        public string SMBIOSAssetTag { get; set; }
-        public void AtualizarInformacoes()
-        {
-            string consultaBios = "SELECT * FROM Win32_BIOS";
-            string consultaSystemEnclosure = "SELECT * FROM Win32_SystemEnclosure";
-            ManagementObjectSearcher Bios = new ManagementObjectSearcher(consultaBios);
-            ManagementObjectSearcher SystemEnclosure = new ManagementObjectSearcher(consultaSystemEnclosure);
-            ManagementBaseObject biosInfo = Bios.Get().Cast<ManagementBaseObject>().FirstOrDefault();
-            ManagementBaseObject systemEnclosureInfo = SystemEnclosure.Get().Cast<ManagementBaseObject>().FirstOrDefault();
+        public string consulta;
 
+        public BiosHandler(string consulta)
+        {
+            this.consulta = consulta;
+        }
+
+        public Bios Executa()
+        {
             try
             {
-                Nome = biosInfo["Name"] as string;
-                Descricao = biosInfo["Description"] as string;
-                Versao = biosInfo["Version"] as string;
-                Build = biosInfo["BuildNumber"] as string;
-                Fabricante = biosInfo["Manufacturer"] as string;
-                Serial = biosInfo["SerialNumber"] as string;
-                VersaoSmbios = biosInfo["SMBIOSBIOSVersion"] as string;
-                SMBIOSAssetTag = systemEnclosureInfo["SMBIOSAssetTag"] as string;
+                if (consulta == null)
+                {
+                    consulta = "SELECT * FROM Win32_BIOS";
+                }
+
+                Bios bios = new ManagementObjectSearcher(consulta)
+                                   .Get()
+                                   .Cast<ManagementBaseObject>()
+                                   .Select(x => new Bios
+                                   {
+                                       Nome = x["Name"] as string,
+                                       Descricao = x["Description"] as string,
+                                       Versao = x["Version"] as string,
+                                       Build = x["BuildNumber"] as string,
+                                       Fabricante = x["Manufacturer"] as string,
+                                       Serial = x["SerialNumber"] as string,
+                                       VersaoSmbios = x["SMBIOSBIOSVersion"] as string,
+                                       SMBIOSAssetTag = PegaAssetTag()
+                                   }).FirstOrDefault();
+                return bios;
             }
-            catch
+            catch (Exception ex)
             {
                 // Log de exceção
             }
+
+            return null;
+        }
+        private string PegaAssetTag()
+        {
+            try
+            {
+                string consultaSystemEnclosure = "SELECT * FROM Win32_SystemEnclosure";
+                ManagementObjectSearcher systemEnclosureSearcher = new ManagementObjectSearcher(consultaSystemEnclosure);
+                ManagementBaseObject systemEnclosureI = systemEnclosureSearcher.Get().Cast<ManagementBaseObject>().FirstOrDefault();
+                return systemEnclosureI["SMBIOSAssetTag"] as string;
+            }
+            catch (Exception ex)
+            {
+                // Log de exceção
+            }
+
+            return string.Empty;
         }
     }
 }
+
